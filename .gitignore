@@ -1,0 +1,6 @@
+*.root
+.DS_Store
+*.pdf
+luciaScripts
+data
+*.txt
