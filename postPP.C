@@ -17,8 +17,8 @@ Double_t fparab(Double_t *x, Double_t *par)
 {
   const Int_t numPart = 7;
   // Signal region
-  Float_t liminf[numPart] = {0.47, 1.105, 1.105, 1.315, 1.315, 1.668, 1.668};
-  Float_t limsup[numPart] = {0.52, 1.125, 1.125, 1.328, 1.328, 1.677, 1.677};
+  Float_t liminf[numPart] = {0.460, 1.105, 1.105, 1.315, 1.315, 1.668, 1.668};
+  Float_t limsup[numPart] = {0.522, 1.125, 1.125, 1.328, 1.328, 1.677, 1.677};
   Int_t part = par[3];
   if (reject && x[0] > liminf[part] && x[0] < limsup[part])
   {
@@ -175,8 +175,8 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
 
   Float_t minRangeSignal[numParticles] = {0.47, 1.112, 1.112, 1.315, 1.315, 1.668, 1.668};
   Float_t maxRangeSignal[numParticles] = {0.52, 1.122, 1.120, 1.328, 1.328, 1.677, 1.677};
-  Float_t minRange[numParticles] =       {0.43, 1.090, 1.090, 1.305, 1.305, 1.655, 1.655};
-  Float_t maxRange[numParticles] =       {0.58, 1.150, 1.150, 1.340, 1.340, 1.690, 1.690};
+  Float_t minRange[numParticles] =       {0.435, 1.095, 1.10, 1.305, 1.305, 1.655, 1.655};
+  Float_t maxRange[numParticles] =       {0.560, 1.140, 1.14, 1.340, 1.340, 1.690, 1.690};
 
   Float_t pdgMass[numParticles] = {0.497611, 1.115683, 1.115683, 1.32171, 1.32171, 1.67245, 1.67245};
 
@@ -313,7 +313,7 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
         total[iFile][iPart][iPt]->SetParLimits(2, 0.0001, 0.05);
         total[iFile][iPart][iPt]->SetParLimits(3, 0., 1.2 * peakValue);
         total[iFile][iPart][iPt]->SetParLimits(4, minRangeSignal[iPart], maxRangeSignal[iPart]);
-        total[iFile][iPart][iPt]->SetParLimits(5, 0.0001, 0.05);
+        total[iFile][iPart][iPt]->SetParLimits(5, 0.0001, 0.03);
         total[iFile][iPart][iPt]->FixParameter(6, parBG[0]);
         total[iFile][iPart][iPt]->FixParameter(7, parBG[1]);
         total[iFile][iPart][iPt]->FixParameter(8, parBG[2]);
