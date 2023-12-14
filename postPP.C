@@ -73,8 +73,7 @@ void DrawVertLine(Double_t x, Double_t yMin, Double_t yMax, Color_t color){
   line->Draw("same"); // Draw the line on the same canvas
 }
 
-void postPP(TString fileList = "listQC.txt", // PP task
-            TString fileList2 = "listQC2.txt", // qc task
+void postPP(TString fileList = "listQC.txt", // PP and QC task
             TString PathOut = "postPP.root")
 {
   gROOT->SetBatch(kTRUE);
@@ -83,7 +82,7 @@ void postPP(TString fileList = "listQC.txt", // PP task
   std::vector<std::string> nameLegend;
   std::ifstream file(Form("%s", fileList.Data()));
 
-  std::string remove = "/Users/rnepeiv/workLund/PhD_work/run3QCPbPb/qcTaskDev/results/postprocessing/AnalysisResults_";
+  std::string remove = "/Users/rnepeiv/workLund/PhD_work/run3QCPbPb/qcTaskDev/results/combined/AnalysisResults_";
   std::string remove2 = ".root";
 
   if (file.is_open())
@@ -116,34 +115,10 @@ void postPP(TString fileList = "listQC.txt", // PP task
   cout << fileList.Data() << endl;
   cout << "Files:" << endl;
 
-  // Files for normalization
-  std::vector<std::string> name2;
-  std::ifstream file2(Form("%s", fileList2.Data()));
-
-  if (file2.is_open())
-  {
-    std::string line;
-    while (std::getline(file2, line))
-    {
-      name2.push_back(line);
-      cout << line << endl;
-    }
-    file2.close();
-  }
-  else
-  {
-    std::cerr << "Unable to open fileList2!" << std::endl;
-  }
-
-  cout << "List:" << endl;
-  cout << fileList2.Data() << endl;
-  cout << "Files:" << endl;
-
   const Int_t numFiles = name.size();
   cout << "Number of files: " << numFiles << endl;
 
   TFile *fileIn[numFiles];
-  TFile *fileIn2[numFiles];
   TFile *fileOut[numFiles];
 
   const Int_t numParticles = 7;
@@ -186,7 +161,7 @@ void postPP(TString fileList = "listQC.txt", // PP task
     1
   };
   Float_t ptBins[numParticles][numPtBins + 1] = {
-    {0., 0.7, 1., 1.5, 2., 3., 6.},
+    {0., 0.7, 1.0, 1.5, 2., 3., 6.},
     {0., 1., 1.5, 2., 6.},
     {0., 1., 1.5, 2., 6.},
     {0., 6.},
@@ -238,16 +213,18 @@ void postPP(TString fileList = "listQC.txt", // PP task
   TFitResultPtr fFitResultParab[numFiles][numParticles][numPtBins];
 
   TCanvas *canvasInvMass[numFiles][numParticles][numPtBins];
+  cout << ptBins[0][0] << " " << ptBins[0][1] << endl;
 
   for (Int_t iFile = 0; iFile < numFiles; iFile++)
   {
-    // Open files for normalization
-    fileIn2[iFile] = TFile::Open(Form("%s", name2[iFile].c_str()));
-    if (!fileIn2[iFile] || fileIn2[iFile]->IsZombie()) {
+    // Open input file
+    fileIn[iFile] = TFile::Open(Form("%s", name[iFile].c_str()));
+    if (!fileIn[iFile] || fileIn[iFile]->IsZombie()) {
         std::cerr << "Error opening input file!" << std::endl;
         return;
     }
-    TDirectory* eventSeldir = fileIn2[iFile]->GetDirectory("lf-strangenessqc/eventSelection");
+
+    TDirectory* eventSeldir = fileIn[iFile]->GetDirectory("lf-strangenessqc/eventSelection");
     if (!eventSeldir)
     {
       std::cerr << "`lf-strangenessqc/eventSelection` directory is not found!" << std::endl;
@@ -264,13 +241,7 @@ void postPP(TString fileList = "listQC.txt", // PP task
     gPad->SaveAs(Form("postPPresults/%s.pdf[", nameLegend[iFile].c_str()));
     Float_t norm = hNevents->GetEntries();
 
-    // Open input file
-    fileIn[iFile] = TFile::Open(Form("%s", name[iFile].c_str()));
-    if (!fileIn[iFile] || fileIn[iFile]->IsZombie()) {
-        std::cerr << "Error opening input file!" << std::endl;
-        return;
-    }
-
+    fileIn[iFile]->cd();
     // Create output file
     fileOut[iFile] = new TFile(Form("postPPresults/%s.root", nameLegend[iFile].c_str()), "recreate");
 
@@ -278,7 +249,6 @@ void postPP(TString fileList = "listQC.txt", // PP task
     TDirectory* fitParamsOutDir = fileOut[iFile]->mkdir("fitParams");
     // Create dir to store all the invariant mass histograms
     TDirectory* invMassOutDir = fileOut[iFile]->mkdir("invMassHists");
-
     // Iterate over particles
     for (Int_t iPart = 0; iPart < numParticles; iPart++) {
       // Open `iPart` directory
@@ -307,7 +277,6 @@ void postPP(TString fileList = "listQC.txt", // PP task
       hMeans[iFile][iPart] = new TH1F("Mean_" + invMassNames[iPart], "Mean_" + invMassNames[iPart], numPtBinsPart[iPart], ptBins[iPart]);
       hSigmas[iFile][iPart] = new TH1F("Sigma_" + invMassNames[iPart], "Sigma_" + invMassNames[iPart], numPtBinsPart[iPart], ptBins[iPart]);
       hYields[iFile][iPart] = new TH1F("Yield_" + invMassNames[iPart], "Yield_" + invMassNames[iPart], numPtBinsPart[iPart], ptBins[iPart]);
-
       for (Int_t iPt = 0; iPt < numPtBinsPart[iPart]; iPt++) {
         hInvMass2Dpt[iFile][iPart][iPt] = (TH2F*)hInvMass2D[iFile][iPart]->Clone(Form("2DHistInPtBin_%d_%d_%d", iFile, iPart, iPt));
         hInvMass2Dpt[iFile][iPart][iPt]->GetYaxis()->SetRangeUser(ptBins[iPart][iPt], ptBins[iPart][iPt+1]);
@@ -326,27 +295,31 @@ void postPP(TString fileList = "listQC.txt", // PP task
         fFitResultParab[iFile][iPart][iPt] = hInvMass1Dpt[iFile][iPart][iPt]->Fit(bkgparab[iFile][iPart][iPt], "R0QS");
         Double_t parBG[4];
         bkgparab[iFile][iPart][iPt]->GetParameters(parBG);
-
-        total[iFile][iPart][iPt] = new TF1(Form("total_%d_%d", iFile, iPart), "gaus(0)+pol2(3)", minRange[iPart], maxRange[iPart]);
+        total[iFile][iPart][iPt] = new TF1(Form("total_%d_%d", iFile, iPart), "gaus(0) + gaus(3) + pol2(6)", minRange[iPart], maxRange[iPart]);
         total[iFile][iPart][iPt]->SetLineColor(kRed);
         total[iFile][iPart][iPt]->SetParName(0, "norm");
         total[iFile][iPart][iPt]->SetParName(1, "mean");
         total[iFile][iPart][iPt]->SetParName(2, "sigma");
-        total[iFile][iPart][iPt]->SetParName(3, "p0");
-        total[iFile][iPart][iPt]->SetParName(4, "p1");
-        total[iFile][iPart][iPt]->SetParName(5, "p2");
+        total[iFile][iPart][iPt]->SetParName(3, "norm2");
+        total[iFile][iPart][iPt]->SetParName(4, "mean2");
+        total[iFile][iPart][iPt]->SetParName(5, "sigma2");
+        total[iFile][iPart][iPt]->SetParName(6, "p0");
+        total[iFile][iPart][iPt]->SetParName(7, "p1");
+        total[iFile][iPart][iPt]->SetParName(8, "p2");
         Float_t peakValue = hInvMass1Dpt[iFile][iPart][iPt]->GetBinContent(hInvMass1Dpt[iFile][iPart][iPt]->GetMaximumBin());
-        total[iFile][iPart][iPt]->SetParameters(peakValue, pdgMass[iPart], 0.001);
+        total[iFile][iPart][iPt]->SetParameters(peakValue, pdgMass[iPart], 0.001, peakValue, pdgMass[iPart], 0.001);
         total[iFile][iPart][iPt]->SetParLimits(0, 0., 1.2 * peakValue);
         total[iFile][iPart][iPt]->SetParLimits(1, minRangeSignal[iPart], maxRangeSignal[iPart]);
         total[iFile][iPart][iPt]->SetParLimits(2, 0.0001, 0.05);
-        total[iFile][iPart][iPt]->FixParameter(3, parBG[0]);
-        total[iFile][iPart][iPt]->FixParameter(4, parBG[1]);
-        total[iFile][iPart][iPt]->FixParameter(5, parBG[2]);
+        total[iFile][iPart][iPt]->SetParLimits(3, 0., 1.2 * peakValue);
+        total[iFile][iPart][iPt]->SetParLimits(4, minRangeSignal[iPart], maxRangeSignal[iPart]);
+        total[iFile][iPart][iPt]->SetParLimits(5, 0.0001, 0.05);
+        total[iFile][iPart][iPt]->FixParameter(6, parBG[0]);
+        total[iFile][iPart][iPt]->FixParameter(7, parBG[1]);
+        total[iFile][iPart][iPt]->FixParameter(8, parBG[2]);
         total[iFile][iPart][iPt]->SetNpx(1e4);
         total[iFile][iPart][iPt]->SetLineWidth(3);
         fFitResultTotal[iFile][iPart][iPt] = hInvMass1Dpt[iFile][iPart][iPt]->Fit(total[iFile][iPart][iPt], "SRB+Q");
-
         bkgparabDraw[iFile][iPart][iPt] = new TF1(Form("parabToDraw_%d_%d_%d", iFile, iPart, iPt), "pol2", minRange[iPart], maxRange[iPart]);
         bkgparabDraw[iFile][iPart][iPt]->FixParameter(0, parBG[0]);
         bkgparabDraw[iFile][iPart][iPt]->FixParameter(1, parBG[1]);
@@ -357,14 +330,16 @@ void postPP(TString fileList = "listQC.txt", // PP task
         bkgparabDraw[iFile][iPart][iPt]->SetLineColor(kCyan+2); //{kBlack, kRed+1 , kBlue+1, kGreen+3, kMagenta+1, kOrange-1,kCyan+2,kYellow+2};
         bkgparabDraw[iFile][iPart][iPt]->Draw("same");
 
-        mean[iFile][iPart][iPt] = total[iFile][iPart][iPt]->GetParameter(1);
-        errMean[iFile][iPart][iPt] = total[iFile][iPart][iPt]->GetParError(1);
-        sigma[iFile][iPart][iPt] = total[iFile][iPart][iPt]->GetParameter(2);
-        errSigma[iFile][iPart][iPt] = total[iFile][iPart][iPt]->GetParError(2);
+        mean[iFile][iPart][iPt] = (total[iFile][iPart][iPt]->GetParameter(1) + total[iFile][iPart][iPt]->GetParameter(4))/2.;
+        errMean[iFile][iPart][iPt] = sqrt(pow(total[iFile][iPart][iPt]->GetParError(1), 2) + pow(total[iFile][iPart][iPt]->GetParError(4), 2)); // TODO: add error from the second gauss
+        sigma[iFile][iPart][iPt] = (total[iFile][iPart][iPt]->GetParameter(2) + total[iFile][iPart][iPt]->GetParameter(5))/2.;
+        errSigma[iFile][iPart][iPt] = sqrt(pow(total[iFile][iPart][iPt]->GetParError(2), 2) + pow(total[iFile][iPart][iPt]->GetParError(5), 2)); // TODO: add error from the second gauss
 
+        Double_t leftSignal = mean[iFile][iPart][iPt] - 5 * sigma[iFile][iPart][iPt];
+        Double_t rightSignal = mean[iFile][iPart][iPt] + 5 * sigma[iFile][iPart][iPt];
         Double_t yaxisMin = hInvMass1Dpt[iFile][iPart][iPt]->GetMinimum();
-        DrawVertLine(mean[iFile][iPart][iPt] - 5 * sigma[iFile][iPart][iPt], yaxisMin, peakValue, kBlack);
-        DrawVertLine(mean[iFile][iPart][iPt] + 5 * sigma[iFile][iPart][iPt], yaxisMin, peakValue, kBlack);
+        DrawVertLine(leftSignal, yaxisMin, peakValue, kBlack);
+        DrawVertLine(rightSignal, yaxisMin, peakValue, kBlack);
         DrawVertLine(minRange[iPart], yaxisMin, peakValue, kMagenta+1);
         DrawVertLine(maxRange[iPart], yaxisMin, peakValue, kMagenta+1);
 
@@ -382,12 +357,12 @@ void postPP(TString fileList = "listQC.txt", // PP task
         hSigmas[iFile][iPart]->SetBinContent(iPt + 1, sigma[iFile][iPart][iPt]);
         hSigmas[iFile][iPart]->SetBinError(iPt + 1, errSigma[iFile][iPart][iPt]);
 
-        yieldBG[iFile][iPart][iPt] = bkgparabDraw[iFile][iPart][iPt]->Integral(mean[iFile][iPart][iPt] - 5 * sigma[iFile][iPart][iPt], mean[iFile][iPart][iPt] + 5 * sigma[iFile][iPart][iPt])/hInvMass1Dpt[iFile][iPart][iPt]->GetBinWidth(1);
-        errYieldBG[iFile][iPart][iPt] = bkgparabDraw[iFile][iPart][iPt]->IntegralError(mean[iFile][iPart][iPt] - 5 * sigma[iFile][iPart][iPt], mean[iFile][iPart][iPt] + 5 * sigma[iFile][iPart][iPt], fFitResultParab[iFile][iPart][iPt]->GetParams(), (fFitResultParab[iFile][iPart][iPt]->GetCovarianceMatrix()).GetMatrixArray());
+        yieldBG[iFile][iPart][iPt] = bkgparabDraw[iFile][iPart][iPt]->Integral(leftSignal, rightSignal)/hInvMass1Dpt[iFile][iPart][iPt]->GetBinWidth(1);
+        errYieldBG[iFile][iPart][iPt] = bkgparabDraw[iFile][iPart][iPt]->IntegralError(leftSignal, rightSignal, fFitResultParab[iFile][iPart][iPt]->GetParams(), (fFitResultParab[iFile][iPart][iPt]->GetCovarianceMatrix()).GetMatrixArray());
 
         yieldWithBG[iFile][iPart][iPt] = 0;
-        for (Int_t bin = hInvMass1Dpt[iFile][iPart][iPt]->GetXaxis()->FindBin(mean[iFile][iPart][iPt] - 5 * sigma[iFile][iPart][iPt]); 
-             bin <= hInvMass1Dpt[iFile][iPart][iPt]->GetXaxis()->FindBin(mean[iFile][iPart][iPt] + 5 * sigma[iFile][iPart][iPt]); 
+        for (Int_t bin = hInvMass1Dpt[iFile][iPart][iPt]->GetXaxis()->FindBin(leftSignal); 
+             bin <= hInvMass1Dpt[iFile][iPart][iPt]->GetXaxis()->FindBin(rightSignal); 
              bin++)
         {
           yieldWithBG[iFile][iPart][iPt] += hInvMass1Dpt[iFile][iPart][iPt]->GetBinContent(bin);
@@ -424,7 +399,6 @@ void postPP(TString fileList = "listQC.txt", // PP task
       hInvMass1D[iFile][iPart]->Write();
     }
     fileIn[iFile]->Close();
-    fileIn2[iFile]->Close();
     fileOut[iFile]->Close();
   }
   gROOT->SetBatch(kFALSE);
