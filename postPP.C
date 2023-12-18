@@ -331,9 +331,9 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
         bkgparabDraw[iFile][iPart][iPt]->Draw("same");
 
         mean[iFile][iPart][iPt] = (total[iFile][iPart][iPt]->GetParameter(1) + total[iFile][iPart][iPt]->GetParameter(4))/2.;
-        errMean[iFile][iPart][iPt] = sqrt(pow(total[iFile][iPart][iPt]->GetParError(1), 2) + pow(total[iFile][iPart][iPt]->GetParError(4), 2)); // TODO: add error from the second gauss
+        errMean[iFile][iPart][iPt] = sqrt(pow(total[iFile][iPart][iPt]->GetParError(1), 2) + pow(total[iFile][iPart][iPt]->GetParError(4), 2));
         sigma[iFile][iPart][iPt] = (total[iFile][iPart][iPt]->GetParameter(2) + total[iFile][iPart][iPt]->GetParameter(5))/2.;
-        errSigma[iFile][iPart][iPt] = sqrt(pow(total[iFile][iPart][iPt]->GetParError(2), 2) + pow(total[iFile][iPart][iPt]->GetParError(5), 2)); // TODO: add error from the second gauss
+        errSigma[iFile][iPart][iPt] = sqrt(pow(total[iFile][iPart][iPt]->GetParError(2), 2) + pow(total[iFile][iPart][iPt]->GetParError(5), 2));
 
         Double_t leftSignal = mean[iFile][iPart][iPt] - 5 * sigma[iFile][iPart][iPt];
         Double_t rightSignal = mean[iFile][iPart][iPt] + 5 * sigma[iFile][iPart][iPt];
