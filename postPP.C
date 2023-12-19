@@ -213,7 +213,6 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
   TFitResultPtr fFitResultParab[numFiles][numParticles][numPtBins];
 
   TCanvas *canvasInvMass[numFiles][numParticles][numPtBins];
-  cout << ptBins[0][0] << " " << ptBins[0][1] << endl;
 
   for (Int_t iFile = 0; iFile < numFiles; iFile++)
   {
@@ -285,7 +284,7 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
         hInvMass1Dpt[iFile][iPart][iPt]->GetYaxis()->SetTitle("Counts");
         hInvMass1Dpt[iFile][iPart][iPt]->SetTitle(Form("%.2f-%.2f pt bin", ptBins[iPart][iPt], ptBins[iPart][iPt+1]));
         // Fit inv mass histogram
-        canvasInvMass[iFile][iPart][iPt] = new TCanvas(invMassNames[iPart] + Form("_%d", iPt), Form("%s_%d_%d_%d", hInvMass3D[iFile][iPart]->GetName(), iFile, iPart, iPt), 1000, 800);
+        canvasInvMass[iFile][iPart][iPt] = new TCanvas(Form("%s_%d_%d_%d", hInvMass3D[iFile][iPart]->GetName(), iFile, iPart, iPt), Form("%s_%d_%d_%d", hInvMass3D[iFile][iPart]->GetName(), iFile, iPart, iPt), 1000, 800);
         StyleCanvas(canvasInvMass[iFile][iPart][iPt], 0.14, 0.05, 0.11, 0.15);
 
         canvasInvMass[iFile][iPart][iPt]->cd();
