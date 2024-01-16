@@ -173,8 +173,8 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
   TH2F *hInvMass2Dpt[numFiles][numParticles][numPtBins];
   TH1F *hInvMass1Dpt[numFiles][numParticles][numPtBins];
 
-  Float_t minRangeSignal[numParticles] = {0.47, 1.112, 1.112, 1.315, 1.315, 1.668, 1.668};
-  Float_t maxRangeSignal[numParticles] = {0.52, 1.122, 1.120, 1.328, 1.328, 1.677, 1.677};
+  Float_t minRangeSignal[numParticles] = {0.48, 1.112, 1.112, 1.315, 1.315, 1.668, 1.668};
+  Float_t maxRangeSignal[numParticles] = {0.51, 1.122, 1.120, 1.328, 1.328, 1.677, 1.677};
   Float_t minRange[numParticles] =       {0.435, 1.095, 1.10, 1.305, 1.305, 1.655, 1.655};
   Float_t maxRange[numParticles] =       {0.560, 1.140, 1.14, 1.340, 1.340, 1.690, 1.690};
 
@@ -213,6 +213,8 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
   TFitResultPtr fFitResultParab[numFiles][numParticles][numPtBins];
 
   TCanvas *canvasInvMass[numFiles][numParticles][numPtBins];
+
+  gStyle->SetErrorX(0);
 
   for (Int_t iFile = 0; iFile < numFiles; iFile++)
   {
@@ -309,10 +311,10 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
         total[iFile][iPart][iPt]->SetParameters(peakValue, pdgMass[iPart], 0.001, peakValue, pdgMass[iPart], 0.001);
         total[iFile][iPart][iPt]->SetParLimits(0, 0., 1.2 * peakValue);
         total[iFile][iPart][iPt]->SetParLimits(1, minRangeSignal[iPart], maxRangeSignal[iPart]);
-        total[iFile][iPart][iPt]->SetParLimits(2, 0.0001, 0.05);
+        total[iFile][iPart][iPt]->SetParLimits(2, 0.001, 0.01);
         total[iFile][iPart][iPt]->SetParLimits(3, 0., 1.2 * peakValue);
         total[iFile][iPart][iPt]->SetParLimits(4, minRangeSignal[iPart], maxRangeSignal[iPart]);
-        total[iFile][iPart][iPt]->SetParLimits(5, 0.0001, 0.03);
+        total[iFile][iPart][iPt]->SetParLimits(5, 0.001, 0.01);
         total[iFile][iPart][iPt]->FixParameter(6, parBG[0]);
         total[iFile][iPart][iPt]->FixParameter(7, parBG[1]);
         total[iFile][iPart][iPt]->FixParameter(8, parBG[2]);
@@ -329,13 +331,46 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
         bkgparabDraw[iFile][iPart][iPt]->SetLineColor(kCyan+2); //{kBlack, kRed+1 , kBlue+1, kGreen+3, kMagenta+1, kOrange-1,kCyan+2,kYellow+2};
         bkgparabDraw[iFile][iPart][iPt]->Draw("same");
 
-        mean[iFile][iPart][iPt] = (total[iFile][iPart][iPt]->GetParameter(1) + total[iFile][iPart][iPt]->GetParameter(4))/2.;
-        errMean[iFile][iPart][iPt] = sqrt(pow(total[iFile][iPart][iPt]->GetParError(1), 2) + pow(total[iFile][iPart][iPt]->GetParError(4), 2));
-        sigma[iFile][iPart][iPt] = (total[iFile][iPart][iPt]->GetParameter(2) + total[iFile][iPart][iPt]->GetParameter(5))/2.;
-        errSigma[iFile][iPart][iPt] = sqrt(pow(total[iFile][iPart][iPt]->GetParError(2), 2) + pow(total[iFile][iPart][iPt]->GetParError(5), 2));
+        // Carolina code
+        Double_t N1a = total[iFile][iPart][iPt]->GetParameter(0);      // N1
+        Double_t N2a = total[iFile][iPart][iPt]->GetParameter(3);      // N2
+        Double_t mu1a = total[iFile][iPart][iPt]->GetParameter(1);     // mu1
+        Double_t mu2a = total[iFile][iPart][iPt]->GetParameter(4);     // mu2
+        Double_t sigma1a = total[iFile][iPart][iPt]->GetParameter(2);  // sigma1
+        Double_t sigma2a = total[iFile][iPart][iPt]->GetParameter(5);  // sigma2
+        TMatrixD cova = fFitResultTotal[iFile][iPart][iPt]->GetCovarianceMatrix();
 
-        Double_t leftSignal = mean[iFile][iPart][iPt] - 5 * sigma[iFile][iPart][iPt];
-        Double_t rightSignal = mean[iFile][iPart][iPt] + 5 * sigma[iFile][iPart][iPt];
+        Double_t mu_wa = (N1a*mu1a + N2a*mu2a)/(N1a+N2a);
+        Double_t sigma_wa = (N1a*sigma1a + N2a*sigma2a)/(N1a+N2a);
+
+        Double_t sa = N1a + N2a;
+        Double_t wa_mu = N1a*mu1a + N2a*mu2a;
+        Double_t wa_sigma = N1a*sigma1a + N2a*sigma2a; 
+
+        Double_t mu_wa_step = pow((mu1a - mu2a),2)*(pow(N1a,2)*cova(3,3) + pow(N2a,2)*cova(0,0))
+                    + 2*cova(0,3)*(wa_mu-sa*mu1a)*(wa_mu-sa*mu2a)
+                    + pow(sa,2)*(pow(N1a,2)*cova(1,1) + pow(N2a,2)*cova(4,4) + 2*N1a*N2a*cova(1,4))
+                    - 2*sa * (N1a * (cova(0,1)*(wa_mu-sa*mu1a) + cova(3,1)*(wa_mu-sa*mu2a)) + 
+                          N2a * (cova(0,4)*(wa_mu-sa*mu1a) + cova(3,4)*(wa_mu-sa*mu2a)));
+
+        mean[iFile][iPart][iPt] = mu_wa;
+        errMean[iFile][iPart][iPt] = sqrt(mu_wa_step / pow(sa,4));
+
+        Double_t sigma_wa_step = pow((sigma1a - sigma2a),2)*(pow(N1a,2)*cova(3,3) + pow(N2a,2)*cova(0,0))
+                    + 2*cova(0,3)*(wa_sigma-sa*sigma1a)*(wa_sigma-sa*sigma2a)
+                    + pow(sa,2)*(pow(N1a,2)*cova(2,2) + pow(N2a,2)*cova(5,5) + 2*N1a*N2a*cova(2,5))
+                    - 2*sa * (N1a * (cova(0,2)*(wa_sigma-sa*sigma1a) + cova(3,2)*(wa_sigma-sa*sigma2a)) + 
+                          N2a * (cova(0,5)*(wa_sigma-sa*sigma1a) + cova(3,5)*(wa_sigma-sa*sigma2a)));
+
+        sigma[iFile][iPart][iPt] = sigma_wa;
+        errSigma[iFile][iPart][iPt] = sqrt(sigma_wa_step / pow(sa,4));
+
+        // cout << "sigma1: " << total[iFile][iPart][iPt]->GetParameter(2) << " err1: " << total[iFile][iPart][iPt]->GetParError(2) << " ampl1: " <<  total[iFile][iPart][iPt]->GetParameter(0) << std::endl;
+        // cout << "sigma2: " << total[iFile][iPart][iPt]->GetParameter(5) << " err2: " << total[iFile][iPart][iPt]->GetParError(5) << " ampl2: " <<  total[iFile][iPart][iPt]->GetParameter(3) <<  std::endl;
+        // cout << "total sigma: " << sigma[iFile][iPart][iPt] << " total err: " << errSigma[iFile][iPart][iPt] <<  std::endl;
+
+        Double_t leftSignal = mean[iFile][iPart][iPt] - 6 * sigma[iFile][iPart][iPt];
+        Double_t rightSignal = mean[iFile][iPart][iPt] + 6 * sigma[iFile][iPart][iPt];
         Double_t yaxisMin = hInvMass1Dpt[iFile][iPart][iPt]->GetMinimum();
         DrawVertLine(leftSignal, yaxisMin, peakValue, kBlack);
         DrawVertLine(rightSignal, yaxisMin, peakValue, kBlack);
@@ -374,17 +409,17 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
       fitParamsOutDir->cd();
 
       StyleHisto(hMeans[iFile][iPart], meanYLow[iPart], meanYUp[iPart], kBlack, 20, "#it{p}_{T} (GeV/#it{c})", "Mean (GeV/#it{c}^{2})", "", 0, 0, 0, 1.0, 1.25, 1, 0.04, 0.04);
-      hMeans[iFile][iPart]->Draw();
+      hMeans[iFile][iPart]->Draw("P");
       gPad->SaveAs(Form("postPPresults/%s.pdf", nameLegend[iFile].c_str()));
       hMeans[iFile][iPart]->Write();
 
       StyleHisto(hSigmas[iFile][iPart], sigmaYLow[iPart], sigmaYUp[iPart], kBlack, 20, "#it{p}_{T} (GeV/#it{c})", "Sigma (GeV/#it{c}^{2})", "", 0, 0, 0, 1.0, 1.25, 1, 0.04, 0.04);
-      hSigmas[iFile][iPart]->Draw();
+      hSigmas[iFile][iPart]->Draw("P");
       gPad->SaveAs(Form("postPPresults/%s.pdf", nameLegend[iFile].c_str()));
       hSigmas[iFile][iPart]->Write();
 
       StyleHisto(hYields[iFile][iPart], yieldYLow[iPart], yieldYUp[iPart], kBlack, 20, "#it{p}_{T} (GeV/#it{c})", "1/#it{N}_{evt} d#it{N}/d#it{p}_{T} (GeV/#it{c})^{-1}", "", 0, 0, 0, 1.0, 1.1, 1, 0.04, 0.04);
-      hYields[iFile][iPart]->Draw();
+      hYields[iFile][iPart]->Draw("P");
       gPad->SetLogy();
       if (iPart == (numParticles - 1)) {
         gPad->SaveAs(Form("postPPresults/%s.pdf]", nameLegend[iFile].c_str()));

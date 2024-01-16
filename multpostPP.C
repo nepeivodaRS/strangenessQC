@@ -177,18 +177,20 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
 
   Float_t sigmaYLow[numParticles] = {0.003, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005};
   Float_t sigmaYUp[numParticles] = {0.015, 0.008, 0.008, 0.004, 0.004, 0.01, 0.01};
-  Float_t sigmaRatioLow[numParticles] = {0.7, 0.5, 0.5, 0.8, 0.8, 0.8, 0.8};
-  Float_t sigmaRatioUp[numParticles] = {1.3, 1.5, 1.5, 1.2, 1.2, 1.2, 1.2};
+  Float_t sigmaRatioLow[numParticles] = {0.8, 0.5, 0.5, 0.8, 0.8, 0.8, 0.8};
+  Float_t sigmaRatioUp[numParticles] = {1.7, 1.5, 1.5, 1.2, 1.2, 1.2, 1.2};
 
   Float_t yieldYLow[numParticles] = {1e-3, 1e-3, 1e-3, 1e-4, 1e-4, 1e-5, 1e-5};
   Float_t yieldYUp[numParticles] = {100, 10, 10, 0.1, 0.1, 0.01, 0.01};
-  Float_t yieldRatioLow[numParticles] = {0.8, 0.8, 0.8, 0.8, 0.8, 0.2, 0.2};
+  Float_t yieldRatioLow[numParticles] = {0.6, 0.6, 0.6, 0.6, 0.6, 0.2, 0.2};
   Float_t yieldRatioUp[numParticles] = {2.5, 2.5, 2.5, 2.2, 2.2, 2.5, 2.5};
 
   Int_t color[8] = {kBlack, kRed+1 , kBlue+1, kGreen+3, kMagenta+1, kOrange-1,kCyan+2,kYellow+2};
 
   TString particleNames[] = {"K0S","Lambda","AntiLambda","XiMinus", "XiPlus", "OmegaMinus", "OmegaPlus"};
   TString particleSymnbols[] = {"K^{0}_{S}", "#Lambda", "#bar{#Lambda}","#Xi^{-}", "#Xi^{+}", "#Omega^{-}", "#Omega^{+}"};
+
+  gStyle->SetErrorX(0);
 
   for (Int_t iFile = 0; iFile < numFiles; iFile++) {
     // Open input file
@@ -310,13 +312,13 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
       StyleHisto(hMeans[iFile][iPart], meanYLow[iPart], meanYUp[iPart], color[iFile], 20, "", hMeans[iFile][iPart]->GetYaxis()->GetTitle(), "", 0, 0, 0, 1.5, 1.0, 1, 0.0, 0.05, 0.0, 0.035);
       TAxis *axisMean = hMeans[iFile][iPart]->GetYaxis();
       axisMean->ChangeLabel(1, -1, -1, -1, -1, -1, " ");
-      hMeans[iFile][iPart]->Draw("same");
+      hMeans[iFile][iPart]->Draw("P same");
       legMean->AddEntry(hMeans[iFile][iPart], nameLegend[iFile].c_str(), "pl");
       // Low
       padMeanLow[iPart]->cd();
       StyleHisto(hMeansRatio[iFile][iPart], meanRatioLow[iPart], meanRatioUp[iPart], color[iFile], 20, "#it{p}_{T} (GeV/#it{c})", Form("Ratio to %s", nameLegend[0].c_str()), "", 0, 0, 0, 1.0, 0.6, 1, 0.08, 0.08, 0.08, 0.08);
       if(!(iFile == 0)) {
-        hMeansRatio[iFile][iPart]->Draw("same");
+        hMeansRatio[iFile][iPart]->Draw("P same");
       }
 
       // Sigma
@@ -329,13 +331,13 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
       StyleHisto(hSigmas[iFile][iPart], sigmaYLow[iPart], sigmaYUp[iPart], color[iFile], 20, "", hSigmas[iFile][iPart]->GetYaxis()->GetTitle(), "", 0, 0, 0, 1.5, 1.0, 1, 0.0, 0.05, 0.0, 0.035);
       TAxis *axisSigma = hSigmas[iFile][iPart]->GetYaxis();
       axisSigma->ChangeLabel(1, -1, -1, -1, -1, -1, " ");
-      hSigmas[iFile][iPart]->Draw("same");
+      hSigmas[iFile][iPart]->Draw("P same");
       legSigma->AddEntry(hSigmas[iFile][iPart], nameLegend[iFile].c_str(), "pl");
       // Low
       padSigmaLow[iPart]->cd();
       StyleHisto(hSigmasRatio[iFile][iPart], sigmaRatioLow[iPart], sigmaRatioUp[iPart], color[iFile], 20, "#it{p}_{T} (GeV/#it{c})", Form("Ratio to %s", nameLegend[0].c_str()), "", 0, 0, 0, 1.0, 0.6, 1, 0.08, 0.08, 0.08, 0.08);
       if(!(iFile == 0)) {
-        hSigmasRatio[iFile][iPart]->Draw("same");
+        hSigmasRatio[iFile][iPart]->Draw("P same");
       }
 
       // Yield
@@ -348,13 +350,13 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
       padYieldUp[iPart]->SetLogy();
       TAxis *axisYield = hYields[iFile][iPart]->GetYaxis();
       axisYield->ChangeLabel(1, -1, -1, -1, -1, -1, " ");
-      hYields[iFile][iPart]->Draw("same");
+      hYields[iFile][iPart]->Draw("P same");
       legYield->AddEntry(hYields[iFile][iPart], nameLegend[iFile].c_str(), "pl");
       // Low
       padYieldLow[iPart]->cd();
       StyleHisto(hYieldsRatio[iFile][iPart], yieldRatioLow[iPart], yieldRatioUp[iPart], color[iFile], 20, "#it{p}_{T} (GeV/#it{c})", Form("Ratio to %s", nameLegend[0].c_str()), "", 0, 0, 0, 1.0, 0.6, 1, 0.08, 0.08, 0.08, 0.08);
       if(!(iFile == 0)) {
-        hYieldsRatio[iFile][iPart]->Draw("same");
+        hYieldsRatio[iFile][iPart]->Draw("P same");
       }
     }
 
