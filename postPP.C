@@ -1,22 +1,10 @@
-#include "TStyle.h"
-#include "TFile.h"
-#include "TFitResult.h"
-#include "TH1F.h"
-#include "TH2F.h"
-#include "TH3F.h"
-#include "TCanvas.h"
-#include "TPad.h"
-#include "TF1.h"
-#include "TLatex.h"
-#include "TLine.h"
-#include "TRatioPlot.h"
-#include "TLegend.h"
+#include "postPP.h"
 
 Bool_t reject = kTRUE;
 Double_t fparab(Double_t *x, Double_t *par)
 {
   const Int_t numPart = 7;
-  // Signal region
+  // Signal region for the BG estimation
   Float_t liminf[numPart] = {0.460, 1.105, 1.105, 1.315, 1.315, 1.668, 1.668};
   Float_t limsup[numPart] = {0.522, 1.125, 1.125, 1.328, 1.328, 1.677, 1.677};
   Int_t part = par[3];
@@ -26,21 +14,6 @@ Double_t fparab(Double_t *x, Double_t *par)
     return 0;
   }
   return par[0] + par[1] * x[0] + par[2] * x[0] * x[0];
-}
-
-void StyleCanvas(TCanvas *canvas, Float_t LMargin, Float_t RMargin, Float_t TMargin, Float_t BMargin)
-{
-  canvas->SetFillColor(0);
-  canvas->SetTickx(1);
-  canvas->SetTicky(1);
-  canvas->SetLeftMargin(LMargin);
-  canvas->SetRightMargin(RMargin);
-  canvas->SetTopMargin(TMargin);
-  canvas->SetBottomMargin(BMargin);
-  gStyle->SetOptStat(0);
-  gStyle->SetLegendBorderSize(0);
-  gStyle->SetLegendFillColor(0);
-  gStyle->SetLegendFont(42);
 }
 
 void StyleHisto(TH1F *histo, Float_t Low, Float_t Up, Int_t color, Int_t style, TString titleX, TString titleY, TString title, 
@@ -63,14 +36,6 @@ void StyleHisto(TH1F *histo, Float_t Low, Float_t Up, Int_t color, Int_t style, 
   //histo->GetYaxis()->SetLabelSize(0.05);
   histo->GetYaxis()->SetTitleOffset(yOffset);
   histo->SetTitle(title);
-}
-
-void DrawVertLine(Double_t x, Double_t yMin, Double_t yMax, Color_t color){
-  TLine *line = new TLine(x, yMin, x, yMax);
-  line->SetLineStyle(2); // Set the line style to dashed (2)
-  line->SetLineWidth(2); // Set the line width
-  line->SetLineColor(color); // Set the line color (kRed is a ROOT predefined color)
-  line->Draw("same"); // Draw the line on the same canvas
 }
 
 void postPP(TString fileList = "listQC.txt", // PP and QC task
@@ -177,8 +142,6 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
   Float_t maxRangeSignal[numParticles] = {0.51, 1.122, 1.120, 1.328, 1.328, 1.677, 1.677};
   Float_t minRange[numParticles] =       {0.435, 1.095, 1.10, 1.305, 1.305, 1.655, 1.655};
   Float_t maxRange[numParticles] =       {0.560, 1.140, 1.14, 1.340, 1.340, 1.690, 1.690};
-
-  Float_t pdgMass[numParticles] = {0.497611, 1.115683, 1.115683, 1.32171, 1.32171, 1.67245, 1.67245};
 
   Float_t meanYLow[numParticles] = {0.493, 1.114, 1.114, 1.315, 1.315, 1.668, 1.668};
   Float_t meanYUp[numParticles] = {0.505, 1.117, 1.117, 1.328, 1.328, 1.677, 1.677};
