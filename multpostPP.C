@@ -93,6 +93,7 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
   TH1F *hMeans[numFiles][numParticles];
   TH1F *hSigmas[numFiles][numParticles];
   TH1F *hYields[numFiles][numParticles];
+  TH1F *hPurity[numFiles][numParticles];
 
   TH1F *hYieldsSpecies[3];
   TCanvas *canvasYieldSpecies[3];
@@ -104,10 +105,12 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
   TH1F *hMeansRatio[numFiles][numParticles];
   TH1F *hSigmasRatio[numFiles][numParticles];
   TH1F *hYieldsRatio[numFiles][numParticles];
+  TH1F *hPurityRatio[numFiles][numParticles];
 
   TH1F *hMeansDenom[numParticles];
   TH1F *hSigmasDenom[numParticles];
   TH1F *hYieldsDenom[numParticles];
+  TH1F *hPurityDenom[numParticles];
 
   TCanvas *canvasMean[numParticles];
   TPad *padMeanLow[numParticles];
@@ -121,22 +124,26 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
   TPad *padYieldLow[numParticles];
   TPad *padYieldUp[numParticles];
 
+  TCanvas *canvasPurity[numParticles];
+  TPad *padPurityLow[numParticles];
+  TPad *padPurityUp[numParticles];
+
   Float_t pdgMassError[numParticles] = {0.013, 0.006, 0.006, 0.07, 0.07, 0.29, 0.29};
 
   Float_t meanYLow[numParticles] = {0.493, 1.113, 1.113, 1.315, 1.315, 1.668, 1.668};
   Float_t meanYUp[numParticles] = {0.505, 1.117, 1.117, 1.328, 1.328, 1.677, 1.677};
-  Float_t meanRatioLow[numParticles] = {0.993, 0.998, 0.998, 0.996, 0.996, 0.996, 0.996};
+  Float_t meanRatioLow[numParticles] = {0.996, 0.998, 0.998, 0.996, 0.996, 0.996, 0.996};
   Float_t meanRatioUp[numParticles] = {1.008, 1.002, 1.002, 1.004, 1.004, 1.004, 1.004};
 
   Float_t sigmaYLow[numParticles] = {0.003, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005};
-  Float_t sigmaYUp[numParticles] = {0.015, 0.008, 0.008, 0.004, 0.004, 0.01, 0.01};
+  Float_t sigmaYUp[numParticles] = {0.013, 0.008, 0.008, 0.004, 0.004, 0.01, 0.01};
   Float_t sigmaRatioLow[numParticles] = {0.8, 0.5, 0.5, 0.8, 0.8, 0.8, 0.8};
-  Float_t sigmaRatioUp[numParticles] = {1.7, 1.5, 1.5, 1.2, 1.2, 1.2, 1.2};
+  Float_t sigmaRatioUp[numParticles] = {1.5, 1.5, 1.5, 1.2, 1.2, 1.2, 1.2};
 
   Float_t yieldYLow[numParticles] = {1e-3, 1e-3, 1e-3, 1e-4, 1e-4, 1e-5, 1e-5};
   Float_t yieldYUp[numParticles] = {100, 10, 10, 0.1, 0.1, 0.01, 0.01};
-  Float_t yieldRatioLow[numParticles] = {0.6, 0.6, 0.6, 0.6, 0.6, 0.2, 0.2};
-  Float_t yieldRatioUp[numParticles] = {2.5, 2.5, 2.5, 2.2, 2.2, 2.5, 2.5};
+  Float_t yieldRatioLow[numParticles] = {0.5, 0.6, 0.6, 0.6, 0.6, 0.2, 0.2};
+  Float_t yieldRatioUp[numParticles] = {2.7, 2.5, 2.5, 2.2, 2.2, 2.5, 2.5};
 
   gStyle->SetErrorX(0);
 
@@ -166,6 +173,9 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
 
         hYieldsDenom[iPart] = (TH1F *)fitDirectories[iFile]->Get("Yield_" + invMassNames[iPart]);
         hYieldsDenom[iPart]->SetName(Form("yieldDenomHisto_%i", iPart));
+
+        hPurityDenom[iPart] = (TH1F *)fitDirectories[iFile]->Get("Purity_" + invMassNames[iPart]);
+        hPurityDenom[iPart]->SetName(Form("purityDenomHisto_%i", iPart));
       }
       // Get mean histogram
       hMeans[iFile][iPart] = (TH1F *)fitDirectories[iFile]->Get("Mean_" + invMassNames[iPart]);
@@ -182,10 +192,15 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
       hYieldsRatio[iFile][iPart] = (TH1F *)hYields[iFile][iPart]->Clone("YieldClone_" + invMassNames[iPart]);
       hYieldsRatio[iFile][iPart]->Divide(hYieldsDenom[iPart]);
 
+      // Get purity histogram
+      hPurity[iFile][iPart] = (TH1F *)fitDirectories[iFile]->Get("Purity_" + invMassNames[iPart]);
+      hPurityRatio[iFile][iPart] = (TH1F *)hPurity[iFile][iPart]->Clone("PurityClone_" + invMassNames[iPart]);
+      hPurityRatio[iFile][iPart]->Divide(hPurityDenom[iPart]);
+
       // Calc. anti-particle/particle raio histograms
       switch (iPart) {
         case 1:
-          hYieldsDenomSpecies[iFile][0] = (TH1F *)hYields[iFile][iPart]->Clone(Form("DenomComaprisonHistoK0s_%s", name[iFile].c_str()));
+          hYieldsDenomSpecies[iFile][0] = (TH1F *)hYields[iFile][iPart]->Clone(Form("DenomComaprisonHistoLambda_%s", name[iFile].c_str()));
           break;
         case 2:
           hYieldsRatioSpecies[iFile][0] = (TH1F *)hYields[iFile][iPart]->Clone("YieldCompClone_" + invMassNames[iPart]);
@@ -250,6 +265,19 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
     padYieldUp[iPart]->Draw();
     padYieldLow[iPart]->Draw();    
 
+    // Purity
+    canvasPurity[iPart] = new TCanvas("purity_" + particleNames[iPart], particleNames[iPart], 800, 600);
+    StyleCanvas(canvasPurity[iPart], 0.15, 0.05, 0.05, 0.15);
+    padPurityUp[iPart] = new TPad("pad1" + particleNames[iPart], "pad1" + particleNames[iPart], 0, 0.36, 1, 1);
+    padPurityLow[iPart] = new TPad("pad2" + particleNames[iPart], "pad2" + particleNames[iPart], 0, 0.01, 1, 0.35);
+    StylePad(padPurityUp[iPart], 0.15, 0.05, 0.05, 0.01);
+    StylePad(padPurityLow[iPart], 0.15, 0.05, 0.03, 0.2);
+    TLegend *legPurity = new TLegend(0.65, 0.65, 0.95, 0.9);
+    StyleLegend(legPurity, 0, 0);
+    canvasPurity[iPart]->cd();
+    padPurityUp[iPart]->Draw();
+    padPurityLow[iPart]->Draw();  
+
     for (Int_t iFile = 0; iFile < numFiles; iFile++) {
       // Mean
       // Up
@@ -306,6 +334,24 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
       if(!(iFile == 0)) {
         hYieldsRatio[iFile][iPart]->Draw("P same");
       }
+
+      // Purity
+      // Up
+      padPurityUp[iPart]->cd();
+      hPurity[iFile][iPart]->GetYaxis()->SetMaxDigits(4);
+      hPurity[iFile][iPart]->GetYaxis()->SetDecimals(kTRUE);
+      hPurity[iFile][iPart]->SetLineColor(color[iFile]);
+      StyleHisto(hPurity[iFile][iPart], 0., 1.4, color[iFile], 20, "", hPurity[iFile][iPart]->GetYaxis()->GetTitle(), "", 0, 0, 0, 1.5, 1.0, 1, 0.0, 0.05, 0.0, 0.035);
+      TAxis *axisPurity = hPurity[iFile][iPart]->GetYaxis();
+      axisPurity->ChangeLabel(1, -1, -1, -1, -1, -1, " ");
+      hPurity[iFile][iPart]->Draw("P same");
+      legPurity->AddEntry(hPurity[iFile][iPart], nameLegend[iFile].c_str(), "pl");
+      // Low
+      padPurityLow[iPart]->cd();
+      StyleHisto(hPurityRatio[iFile][iPart], 0.5, 1.9, color[iFile], 20, "#it{p}_{T} (GeV/#it{c})", Form("Ratio to %s", nameLegend[0].c_str()), "", 0, 0, 0, 1.0, 0.6, 1, 0.08, 0.08, 0.08, 0.08);
+      if(!(iFile == 0)) {
+        hPurityRatio[iFile][iPart]->Draw("P same");
+      }
     }
 
     TLegend *LegendTitle = new TLegend(0.25, 0.7, 0.55, 0.9);
@@ -340,6 +386,16 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
     canvasSigma[iPart]->Update();
     canvasSigma[iPart]->SaveAs("multResults/pdf/" + particleNames[iPart] + ".pdf");
 
+    // Purity
+    padPurityUp[iPart]->cd();
+    LegendTitle->Draw();
+    legPurity->Draw();
+    padPurityLow[iPart]->cd();
+    DrawHorLine(6.0, 1.0);
+    gPad->Update();
+    canvasPurity[iPart]->Update();
+    canvasPurity[iPart]->SaveAs("multResults/pdf/" + particleNames[iPart] + ".pdf");
+
     // Yield
     padYieldUp[iPart]->cd();
     LegendTitle->Draw();
@@ -353,9 +409,11 @@ void multpostPP(TString fileList = "postPPresults/listPP.txt")
     } else {
       canvasYield[iPart]->SaveAs("multResults/pdf/" + particleNames[iPart] + ".pdf)");
     }
+    //canvasYield[iPart]->SaveAs("multResults/pdf/" + particleNames[iPart] + ".pdf)");
 
     delete canvasMean[iPart];
     delete canvasSigma[iPart];
+    delete canvasPurity[iPart];
     delete canvasYield[iPart];
   }
 

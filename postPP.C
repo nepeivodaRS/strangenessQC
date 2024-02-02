@@ -38,8 +38,7 @@ void StyleHisto(TH1F *histo, Float_t Low, Float_t Up, Int_t color, Int_t style, 
   histo->SetTitle(title);
 }
 
-void postPP(TString fileList = "listQC.txt", // PP and QC task
-            TString PathOut = "postPP.root")
+void postPP(TString fileList = "listQC.txt") // PP and QC task
 {
   gROOT->SetBatch(kTRUE);
   // Files with histograms
@@ -155,6 +154,7 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
   TH1F *hMeans[numFiles][numParticles];
   TH1F *hSigmas[numFiles][numParticles];
   TH1F *hYields[numFiles][numParticles];
+  TH1F *hPurity[numFiles][numParticles];
 
   Float_t mean[numFiles][numParticles][numPtBins];
   Float_t errMean[numFiles][numParticles][numPtBins];
@@ -241,6 +241,7 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
       hMeans[iFile][iPart] = new TH1F("Mean_" + invMassNames[iPart], "Mean_" + invMassNames[iPart], numPtBinsPart[iPart], ptBins[iPart]);
       hSigmas[iFile][iPart] = new TH1F("Sigma_" + invMassNames[iPart], "Sigma_" + invMassNames[iPart], numPtBinsPart[iPart], ptBins[iPart]);
       hYields[iFile][iPart] = new TH1F("Yield_" + invMassNames[iPart], "Yield_" + invMassNames[iPart], numPtBinsPart[iPart], ptBins[iPart]);
+      hPurity[iFile][iPart] = new TH1F("Purity_" + invMassNames[iPart], "Purity_" + invMassNames[iPart], numPtBinsPart[iPart], ptBins[iPart]);
       for (Int_t iPt = 0; iPt < numPtBinsPart[iPart]; iPt++) {
         hInvMass2Dpt[iFile][iPart][iPt] = (TH2F*)hInvMass2D[iFile][iPart]->Clone(Form("2DHistInPtBin_%d_%d_%d", iFile, iPart, iPt));
         hInvMass2Dpt[iFile][iPart][iPt]->GetYaxis()->SetRangeUser(ptBins[iPart][iPt], ptBins[iPart][iPt+1]);
@@ -367,6 +368,9 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
 
         hYields[iFile][iPart]->SetBinContent(iPt + 1, (yieldWithBG[iFile][iPart][iPt] - yieldBG[iFile][iPart][iPt]) / hYields[iFile][iPart]->GetBinWidth(iPt + 1) / norm);
         hYields[iFile][iPart]->SetBinError(iPt + 1, sqrt(yieldWithBG[iFile][iPart][iPt] + pow(errYieldBG[iFile][iPart][iPt], 2)) / hYields[iFile][iPart]->GetBinWidth(iPt + 1) / norm);
+
+        hPurity[iFile][iPart]->SetBinContent(iPt + 1, (yieldWithBG[iFile][iPart][iPt] - yieldBG[iFile][iPart][iPt])/(yieldWithBG[iFile][iPart][iPt]));
+        hPurity[iFile][iPart]->SetBinError(iPt + 1, 0);
       }
 
       fitParamsOutDir->cd();
@@ -380,6 +384,11 @@ void postPP(TString fileList = "listQC.txt", // PP and QC task
       hSigmas[iFile][iPart]->Draw("P");
       gPad->SaveAs(Form("postPPresults/%s.pdf", nameLegend[iFile].c_str()));
       hSigmas[iFile][iPart]->Write();
+
+      StyleHisto(hPurity[iFile][iPart], 0, 1, kBlack, 20, "#it{p}_{T} (GeV/#it{c})", "S/B", "", 0, 0, 0, 1.0, 1.25, 1, 0.04, 0.04);
+      hPurity[iFile][iPart]->Draw("P");
+      gPad->SaveAs(Form("postPPresults/%s.pdf", nameLegend[iFile].c_str()));
+      hPurity[iFile][iPart]->Write();
 
       StyleHisto(hYields[iFile][iPart], yieldYLow[iPart], yieldYUp[iPart], kBlack, 20, "#it{p}_{T} (GeV/#it{c})", "1/#it{N}_{evt} d#it{N}/d#it{p}_{T} (GeV/#it{c})^{-1}", "", 0, 0, 0, 1.0, 1.1, 1, 0.04, 0.04);
       hYields[iFile][iPart]->Draw("P");
