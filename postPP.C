@@ -253,7 +253,7 @@ void postPP(TString fileList = "listQC.txt") // PP and QC task
       hPurity[iFile][iPart] = new TH1F("Purity_" + invMassNames[iPart], "Purity_" + invMassNames[iPart], numPtBinsPart[iPart], ptBins[iPart]);
       for (Int_t iPt = 0; iPt < numPtBinsPart[iPart]; iPt++) {
         hInvMass2Dpt[iFile][iPart][iPt] = (TH2F*)hInvMass2D[iFile][iPart]->Clone(Form("2DHistInPtBin_%d_%d_%d", iFile, iPart, iPt));
-        hInvMass2Dpt[iFile][iPart][iPt]->GetYaxis()->SetRangeUser(ptBins[iPart][iPt], ptBins[iPart][iPt+1]);
+        hInvMass2Dpt[iFile][iPart][iPt]->GetYaxis()->SetRangeUser(ptBins[iPart][iPt]+1e-6, ptBins[iPart][iPt+1]-1e-6);
         hInvMass1Dpt[iFile][iPart][iPt] = (TH1F *)hInvMass2Dpt[iFile][iPart][iPt]->ProjectionX();
         hInvMass1Dpt[iFile][iPart][iPt]->Sumw2();
         hInvMass1Dpt[iFile][iPart][iPt]->GetYaxis()->SetTitle("Counts");
