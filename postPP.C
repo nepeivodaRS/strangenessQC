@@ -48,6 +48,7 @@ void postPP(TString fileList = "listQC.txt") // PP and QC task
 
   std::string remove = "/Users/rnepeiv/workLund/PhD_work/run3QCPbPb/qcTaskDev/results/combined/AnalysisResults_";
   std::string remove2 = ".root";
+  cout << "Files:" << endl;
 
   if (file.is_open())
   {
@@ -77,7 +78,6 @@ void postPP(TString fileList = "listQC.txt") // PP and QC task
 
   cout << "List:" << endl;
   cout << fileList.Data() << endl;
-  cout << "Files:" << endl;
 
   const Int_t numFiles = name.size();
   cout << "Number of files: " << numFiles << endl;
@@ -88,6 +88,7 @@ void postPP(TString fileList = "listQC.txt") // PP and QC task
   const Int_t numParticles = 7;
 
   TDirectory *partDirectories[numFiles][numParticles];
+  TDirectory *eventSeldir[numFiles];
 
   TString invMassNames[numParticles] = {
     "InvMassK0S", 
@@ -177,6 +178,9 @@ void postPP(TString fileList = "listQC.txt") // PP and QC task
 
   TCanvas *canvasInvMass[numFiles][numParticles][numPtBins];
 
+  TCanvas *canvasNEvents[numFiles];
+  TH1F *hNevents[numFiles];
+
   gStyle->SetErrorX(0);
 
   for (Int_t iFile = 0; iFile < numFiles; iFile++)
@@ -188,24 +192,22 @@ void postPP(TString fileList = "listQC.txt") // PP and QC task
         return;
     }
 
-    TDirectory* eventSeldir = fileIn[iFile]->GetDirectory("lf-strangenessqc/eventSelection");
-    if (!eventSeldir)
+    fileIn[iFile]->cd();
+
+    eventSeldir[iFile] = fileIn[iFile]->GetDirectory("lf-strangenessqc/eventSelection");
+    if (!eventSeldir[iFile])
     {
       std::cerr << "`lf-strangenessqc/eventSelection` directory is not found!" << std::endl;
       return;
     }
 
-    TH1F* hNevents = (TH1F *)eventSeldir->Get("hVertexZRec");
-    if (!hNevents)
+    hNevents[iFile] = (TH1F *)eventSeldir[iFile]->Get("hVertexZRec");
+    if (!hNevents[iFile])
     {
       std::cerr << "Histogram `hVertexZRec` is not found!" << std::endl;
       return;
     }
-    hNevents->Draw();
-    gPad->SaveAs(Form("postPPresults/%s.pdf[", nameLegend[iFile].c_str()));
-    Float_t norm = hNevents->GetEntries();
 
-    fileIn[iFile]->cd();
     // Create output file
     fileOut[iFile] = new TFile(Form("postPPresults/%s.root", nameLegend[iFile].c_str()), "recreate");
 
@@ -213,6 +215,13 @@ void postPP(TString fileList = "listQC.txt") // PP and QC task
     TDirectory* fitParamsOutDir = fileOut[iFile]->mkdir("fitParams");
     // Create dir to store all the invariant mass histograms
     TDirectory* invMassOutDir = fileOut[iFile]->mkdir("invMassHists");
+
+    canvasNEvents[numFiles] = new TCanvas(Form("%s_%d", hNevents[iFile]->GetName(), iFile), Form("%s_%d", hNevents[iFile]->GetName(), iFile), 1000, 800);
+    hNevents[iFile]->Draw();
+    canvasNEvents[numFiles]->Write();
+    canvasNEvents[numFiles]->SaveAs(Form("postPPresults/%s.pdf(", nameLegend[iFile].c_str()));
+    Float_t norm = hNevents[iFile]->GetEntries();
+
     // Iterate over particles
     for (Int_t iPart = 0; iPart < numParticles; iPart++) {
       // Open `iPart` directory
@@ -385,7 +394,7 @@ void postPP(TString fileList = "listQC.txt") // PP and QC task
       gPad->SaveAs(Form("postPPresults/%s.pdf", nameLegend[iFile].c_str()));
       hSigmas[iFile][iPart]->Write();
 
-      StyleHisto(hPurity[iFile][iPart], 0, 1, kBlack, 20, "#it{p}_{T} (GeV/#it{c})", "S/B", "", 0, 0, 0, 1.0, 1.25, 1, 0.04, 0.04);
+      StyleHisto(hPurity[iFile][iPart], 0, 1, kBlack, 20, "#it{p}_{T} (GeV/#it{c})", "S/(B+S)", "", 0, 0, 0, 1.0, 1.25, 1, 0.04, 0.04);
       hPurity[iFile][iPart]->Draw("P");
       gPad->SaveAs(Form("postPPresults/%s.pdf", nameLegend[iFile].c_str()));
       hPurity[iFile][iPart]->Write();
@@ -394,7 +403,7 @@ void postPP(TString fileList = "listQC.txt") // PP and QC task
       hYields[iFile][iPart]->Draw("P");
       gPad->SetLogy();
       if (iPart == (numParticles - 1)) {
-        gPad->SaveAs(Form("postPPresults/%s.pdf]", nameLegend[iFile].c_str()));
+        gPad->SaveAs(Form("postPPresults/%s.pdf)", nameLegend[iFile].c_str()));
       } else {
         gPad->SaveAs(Form("postPPresults/%s.pdf", nameLegend[iFile].c_str()));
       }
